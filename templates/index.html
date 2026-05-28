@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AcademiaSIS - Sistema de Gestion</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="brand-logo">A</div>
+    <div>
+      <div class="brand-title">AcademiaSIS</div>
+      <div class="brand-sub">Sistema v2</div>
+    </div>
+  </div>
+  <nav class="menu">
+    <a class="menu-item active" data-view="dashboard">Dashboard</a>
+    <a class="menu-item" data-view="alumnos">Alumnos</a>
+    <a class="menu-item" data-view="talleres">Talleres y Fechas</a>
+    <a class="menu-item" data-view="inscripciones">Inscripciones</a>
+    <a class="menu-item" data-view="finanzas">Finanzas</a>
+    <a class="menu-item" data-view="rentabilidad">Rentabilidad</a>
+    <a class="menu-item" data-view="inventario">Inventario</a>
+    <a class="menu-item" data-view="reportes">Reportes</a>
+  </nav>
+</aside>
+
+<div class="topbar">
+  <button class="menu-toggle" id="menuToggle">&#9776;</button>
+  <div class="topbar-title" id="topbarTitle">Dashboard</div>
+</div>
+
+<main class="main">
+
+<!-- ============== DASHBOARD ============== -->
+<section class="view" id="view-dashboard">
+  <div class="view-header">
+    <h1>Dashboard</h1>
+    <div class="period-switch">
+      <button class="period-btn active" data-period="hoy">Hoy</button>
+      <button class="period-btn" data-period="semana">Esta semana</button>
+      <button class="period-btn" data-period="mes">Este mes</button>
+    </div>
+  </div>
+
+  <div id="alertBar" class="alert-bar hidden"></div>
+
+  <div class="metrics-grid">
+    <div class="metric-card metric-blue">
+      <div class="metric-label">Inscritos</div>
+      <div class="metric-value" id="m-inscritos">0</div>
+      <div class="metric-sub" id="m-inscritos-sub">total acumulado: 0</div>
+    </div>
+    <div class="metric-card metric-green">
+      <div class="metric-label">Ingresos</div>
+      <div class="metric-value">S/ <span id="m-ingresos">0</span></div>
+      <div class="metric-sub">Del periodo seleccionado</div>
+    </div>
+    <div class="metric-card metric-red">
+      <div class="metric-label">Gastos</div>
+      <div class="metric-value">S/ <span id="m-gastos">0</span></div>
+      <div class="metric-sub">Del periodo seleccionado</div>
+    </div>
+    <div class="metric-card metric-purple">
+      <div class="metric-label">Utilidad Neta</div>
+      <div class="metric-value">S/ <span id="m-utilidad">0</span></div>
+      <div class="metric-sub">Margen: <span id="m-margen">0</span>%</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h3>Ingresos vs Gastos (ultimos 7 dias)</h3>
+      <div class="chart-bars" id="chart-bars"></div>
+    </div>
+    <div class="panel">
+      <h3>Rentabilidad por curso (Top 5)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Taller</th><th>Inscritos</th><th>Ingresos</th><th>Asist.</th><th>Ticket</th></tr></thead>
+          <tbody id="top-cursos"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="panel">
+      <h3>Fuente de captacion</h3>
+      <div id="fuentes-list"></div>
+    </div>
+    <div class="panel ring-panel">
+      <h3>Tasa de retorno</h3>
+      <div class="ring-wrap">
+        <svg class="ring" width="140" height="140" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="58" fill="none" stroke="#e2e8f0" stroke-width="14"/>
+          <circle id="ring-circle" cx="70" cy="70" r="58" fill="none" stroke="#7c3aed" stroke-width="14"
+                  stroke-linecap="round" stroke-dasharray="364" stroke-dashoffset="364"
+                  transform="rotate(-90 70 70)"/>
+          <text id="ring-text" x="70" y="78" text-anchor="middle" font-size="24" font-weight="700" fill="#1e293b">0%</text>
+        </svg>
+        <p class="muted">% de alumnos que repiten talleres</p>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Stock critico</h3>
+      <div id="stock-critico-list"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Proximos talleres programados</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Fecha</th><th>Turno</th><th>Taller</th><th>Sede</th><th>Profesor</th><th>Inscritos/Cupo</th><th>Estado</th></tr></thead>
+        <tbody id="proximos-list"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Inscripciones por taller</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Taller</th><th>Fecha</th><th>Turno</th><th>Inscritos</th><th>Asistencias</th><th>Progreso</th></tr></thead>
+        <tbody id="insc-taller-list"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h3>Alumnos reprogramados <span class="badge" id="rep-count">0</span></h3>
+      <div id="reprogramados-list" class="scrollable-200"></div>
+    </div>
+    <div class="panel">
+      <h3>Seguimientos pendientes</h3>
+      <div id="seguimientos-list" class="scrollable-200"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== ALUMNOS ============== -->
+<section class="view hidden" id="view-alumnos">
+  <div class="view-header">
+    <h1>Alumnos</h1>
+    <button class="btn btn-primary" onclick="openModal('modal-alumno')">+ Nuevo Alumno</button>
+  </div>
+  <div class="panel">
+    <input type="text" id="alumno-search" class="input search-input" placeholder="Buscar por DNI, nombre o correo...">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nombre</th><th>DNI</th><th>Telefono</th><th>Fuente</th><th>Talleres</th><th>Ultimo taller</th><th>Acciones</th></tr></thead>
+        <tbody id="alumnos-list"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============== TALLERES Y FECHAS ============== -->
+<section class="view hidden" id="view-talleres">
+  <div class="view-header"><h1>Talleres y Fechas</h1></div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Catalogo de Talleres</h3>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modal-taller')">+ Taller</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nombre</th><th>Dias</th><th>Precio</th><th></th></tr></thead>
+          <tbody id="talleres-list"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Sedes</h3>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modal-sede')">+ Sede</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nombre</th><th>Direccion</th><th></th></tr></thead>
+          <tbody id="sedes-list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Fechas Programadas</h3>
+      <div class="flex-row">
+        <select id="filtro-fecha-taller" class="input"><option value="">Todos los talleres</option></select>
+        <button class="btn btn-primary" onclick="openModal('modal-fecha')">+ Programar Fecha</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Taller</th><th>Fecha</th><th>Turno</th><th>Sede</th><th>Profesor</th><th>Inscritos/Cupo</th><th>Ingresos</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody id="fechas-list"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============== INSCRIPCIONES ============== -->
+<section class="view hidden" id="view-inscripciones">
+  <div class="view-header">
+    <h1>Inscripciones</h1>
+    <button class="btn btn-primary" onclick="openInscripcionModal()">+ Nueva Inscripcion</button>
+  </div>
+  <div class="panel">
+    <div class="filters-row">
+      <input type="date" id="filtro-insc-desde" class="input">
+      <input type="date" id="filtro-insc-hasta" class="input">
+      <select id="filtro-insc-taller" class="input"><option value="">Todos</option></select>
+      <select id="filtro-insc-estado" class="input">
+        <option value="">Todos los estados</option>
+        <option value="Pagado">Pagado</option>
+        <option value="Adelanto">Adelanto/saldo</option>
+        <option value="Pendiente">Pendiente</option>
+      </select>
+      <button class="btn btn-secondary" onclick="loadInscripciones()">Filtrar</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Alumno</th><th>DNI</th><th>Taller</th><th>Fecha</th><th>Turno</th><th>Sede</th><th>Pago</th><th>Monto</th><th>Asistencia</th><th>Acciones</th></tr></thead>
+        <tbody id="inscripciones-list"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FINANZAS ============== -->
+<section class="view hidden" id="view-finanzas">
+  <div class="view-header"><h1>Finanzas</h1></div>
+  <div class="panel">
+    <div class="filters-row">
+      <label>Desde <input type="date" id="fin-desde" class="input"></label>
+      <label>Hasta <input type="date" id="fin-hasta" class="input"></label>
+      <button class="btn btn-secondary" onclick="loadFinanzas()">Filtrar</button>
+      <button class="btn btn-primary" onclick="openModal('modal-gasto')" style="margin-left:auto">+ Registrar Gasto</button>
+    </div>
+  </div>
+
+  <div class="metrics-grid metrics-3">
+    <div class="metric-card metric-green">
+      <div class="metric-label">Ingresos</div>
+      <div class="metric-value">S/ <span id="fin-ingresos">0</span></div>
+    </div>
+    <div class="metric-card metric-red">
+      <div class="metric-label">Gastos</div>
+      <div class="metric-value">S/ <span id="fin-gastos">0</span></div>
+    </div>
+    <div class="metric-card metric-purple">
+      <div class="metric-label">Utilidad</div>
+      <div class="metric-value">S/ <span id="fin-utilidad">0</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h3>Gastos por categoria</h3>
+      <div id="categorias-chart"></div>
+    </div>
+    <div class="panel">
+      <h3>Analisis de descuentos</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Promocion</th><th>Usos</th><th>Estimado</th></tr></thead>
+          <tbody id="descuentos-list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Ultimos gastos</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Descripcion</th><th>Categoria</th><th>Monto</th><th>Fecha</th><th>Metodo</th><th>Comprobante</th><th></th></tr></thead>
+        <tbody id="gastos-list"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============== RENTABILIDAD ============== -->
+<section class="view hidden" id="view-rentabilidad">
+  <div class="view-header"><h1>Rentabilidad por curso</h1></div>
+  <div class="panel">
+    <div class="filters-row">
+      <label>Desde <input type="date" id="rent-desde" class="input"></label>
+      <label>Hasta <input type="date" id="rent-hasta" class="input"></label>
+      <button class="btn btn-secondary" onclick="loadRentabilidad()">Filtrar</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Taller</th><th>Inscritos</th><th>Ingresos</th><th>Por cobrar</th><th>Asistencias</th><th>Ticket</th></tr></thead>
+        <tbody id="rentabilidad-list"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============== INVENTARIO ============== -->
+<section class="view hidden" id="view-inventario">
+  <div class="view-header">
+    <h1>Inventario</h1>
+    <button class="btn btn-primary" onclick="openModal('modal-insumo')">+ Nuevo Insumo</button>
+  </div>
+  <div class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nombre</th><th>Unidad</th><th>Stock</th><th>Minimo</th><th>Consumo/clase</th><th>Clases restantes</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody id="insumos-list"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============== REPORTES ============== -->
+<section class="view hidden" id="view-reportes">
+  <div class="view-header"><h1>Reportes</h1></div>
+  <div class="panel">
+    <div class="filters-row">
+      <label>Desde <input type="date" id="rep-desde" class="input"></label>
+      <label>Hasta <input type="date" id="rep-hasta" class="input"></label>
+      <button class="btn btn-primary" onclick="exportExcel()">Exportar Excel</button>
+    </div>
+    <p class="muted">Genera un archivo Excel con dos hojas: Inscripciones (datos completos) y Gastos (registros financieros).</p>
+  </div>
+</section>
+
+</main>
+
+<!-- ============== MODALES ============== -->
+<!-- MODAL ALUMNO -->
+<div class="modal-backdrop hidden" id="modal-alumno">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="alumno-modal-title">Nuevo Alumno</h2>
+      <button class="modal-close" onclick="closeModal('modal-alumno')">&times;</button>
+    </div>
+    <form id="form-alumno" class="modal-body">
+      <input type="hidden" name="id">
+      <div class="grid-2">
+        <label>Nombre completo *<input class="input" name="nombre" required></label>
+        <label>DNI *<input class="input" name="dni" required></label>
+        <label>Correo<input class="input" name="correo" type="email"></label>
+        <label>Telefono / WhatsApp<input class="input" name="telefono"></label>
+        <label>Edad<input class="input" name="edad" type="number" min="0"></label>
+        <label>Profesion<input class="input" name="profesion"></label>
+      </div>
+      <label class="block">Fuente de captacion</label>
+      <div class="radio-group">
+        <label><input type="radio" name="fuente" value="Instagram" checked> Instagram</label>
+        <label><input type="radio" name="fuente" value="TikTok"> TikTok</label>
+        <label><input type="radio" name="fuente" value="Google"> Google</label>
+        <label><input type="radio" name="fuente" value="Referido"> Referido</label>
+        <label><input type="radio" name="fuente" value="Volante"> Volante</label>
+        <label><input type="radio" name="fuente" value="Otro"> Otro</label>
+      </div>
+      <label class="block">Anotaciones internas<textarea class="input" name="notas" rows="3"></textarea></label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-alumno')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL PERFIL ALUMNO -->
+<div class="modal-backdrop hidden" id="modal-perfil-alumno">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h2 id="perfil-nombre">Perfil</h2>
+      <button class="modal-close" onclick="closeModal('modal-perfil-alumno')">&times;</button>
+    </div>
+    <div class="modal-body" id="perfil-body"></div>
+  </div>
+</div>
+
+<!-- MODAL TALLER -->
+<div class="modal-backdrop hidden" id="modal-taller">
+  <div class="modal">
+    <div class="modal-head"><h2>Nuevo Taller</h2><button class="modal-close" onclick="closeModal('modal-taller')">&times;</button></div>
+    <form id="form-taller" class="modal-body">
+      <label>Nombre *<input class="input" name="nombre" required></label>
+      <div class="grid-2">
+        <label>Duracion (dias)<input class="input" name="duracion_dias" type="number" value="1" min="1"></label>
+        <label>Precio base (S/)<input class="input" name="precio_base" type="number" step="0.01" value="0"></label>
+      </div>
+      <label>Descripcion<textarea class="input" name="descripcion" rows="3"></textarea></label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-taller')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL SEDE -->
+<div class="modal-backdrop hidden" id="modal-sede">
+  <div class="modal">
+    <div class="modal-head"><h2>Nueva Sede</h2><button class="modal-close" onclick="closeModal('modal-sede')">&times;</button></div>
+    <form id="form-sede" class="modal-body">
+      <label>Nombre *<input class="input" name="nombre" required></label>
+      <label>Direccion<input class="input" name="direccion"></label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-sede')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL FECHA -->
+<div class="modal-backdrop hidden" id="modal-fecha">
+  <div class="modal">
+    <div class="modal-head"><h2>Programar Fecha</h2><button class="modal-close" onclick="closeModal('modal-fecha')">&times;</button></div>
+    <form id="form-fecha" class="modal-body">
+      <label>Taller *<select class="input" name="taller_id" required id="fecha-taller-sel"></select></label>
+      <div class="grid-2">
+        <label>Fecha *<input class="input" name="fecha" type="date" required></label>
+        <label>Turno *
+          <select class="input" name="turno" required>
+            <option value="mañana">Mañana</option>
+            <option value="tarde">Tarde</option>
+            <option value="noche">Noche</option>
+          </select>
+        </label>
+        <label>Sede<select class="input" name="sede_id" id="fecha-sede-sel"><option value="">--</option></select></label>
+        <label>Cupo<input class="input" name="cupo" type="number" value="20" min="1"></label>
+      </div>
+      <label>Profesor<input class="input" name="profesor"></label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-fecha')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL INSCRIPCION (paso a paso) -->
+<div class="modal-backdrop hidden" id="modal-inscripcion">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h2 id="insc-modal-title">Nueva Inscripcion</h2><button class="modal-close" onclick="closeModal('modal-inscripcion')">&times;</button></div>
+    <div class="modal-body">
+      <div class="stepper">
+        <div class="step active" data-step="1">1. Alumno</div>
+        <div class="step" data-step="2">2. Taller y fecha</div>
+        <div class="step" data-step="3">3. Pago</div>
+        <div class="step" data-step="4">4. Anotaciones</div>
+      </div>
+
+      <div class="step-content active" data-content="1">
+        <label>DNI <input class="input" id="insc-dni" placeholder="Ingresa DNI"></label>
+        <button class="btn btn-secondary btn-sm" type="button" onclick="searchAlumnoByDni()">Buscar</button>
+        <div id="alumno-encontrado" class="info-box hidden"></div>
+        <div id="alumno-nuevo" class="hidden">
+          <div class="grid-2">
+            <label>Nombre completo *<input class="input" id="nuevo-nombre"></label>
+            <label>Correo<input class="input" id="nuevo-correo" type="email"></label>
+            <label>Telefono<input class="input" id="nuevo-telefono"></label>
+            <label>Edad<input class="input" id="nuevo-edad" type="number"></label>
+            <label>Profesion<input class="input" id="nuevo-profesion"></label>
+            <label>Fuente
+              <select class="input" id="nuevo-fuente">
+                <option>Instagram</option><option>TikTok</option><option>Google</option>
+                <option>Referido</option><option>Volante</option><option>Otro</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-content hidden" data-content="2">
+        <label>Taller *<select class="input" id="insc-taller"></select></label>
+        <label>Fecha / Turno / Sede *<select class="input" id="insc-fecha"></select></label>
+      </div>
+
+      <div class="step-content hidden" data-content="3">
+        <div class="grid-2">
+          <label>Monto total (S/) <input class="input" id="insc-total" type="number" step="0.01" value="0"></label>
+          <label>Monto pagado (S/) <input class="input" id="insc-pagado" type="number" step="0.01" value="0"></label>
+          <label>Metodo de pago
+            <select class="input" id="insc-metodo">
+              <option value="">--</option>
+              <option>Yape</option><option>Plin</option><option>Transferencia</option>
+              <option>Efectivo</option><option>Tarjeta</option>
+            </select>
+          </label>
+          <label>Promocion aplicada<input class="input" id="insc-promo"></label>
+        </div>
+        <label>Tipo de descuento
+          <select class="input" id="insc-tipo-desc">
+            <option value="">--</option>
+            <option>2x1 referido</option>
+            <option>Descuento Instagram</option>
+            <option>Promo primer taller</option>
+            <option>Otro</option>
+          </select>
+        </label>
+        <p class="muted">Estado se calcula automaticamente segun el monto total/pagado.</p>
+      </div>
+
+      <div class="step-content hidden" data-content="4">
+        <label>Anotaciones<textarea class="input" id="insc-notas" rows="4"></textarea></label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" type="button" id="insc-prev">Anterior</button>
+        <button class="btn btn-secondary" type="button" id="insc-next">Siguiente</button>
+        <button class="btn btn-primary" type="button" id="insc-save" style="display:none">Guardar inscripcion</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CIERRE DE CLASE -->
+<div class="modal-backdrop hidden" id="modal-cierre">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h2 id="cierre-title">Cerrar Clase</h2><button class="modal-close" onclick="closeModal('modal-cierre')">&times;</button></div>
+    <div class="modal-body" id="cierre-body"></div>
+  </div>
+</div>
+
+<!-- MODAL GASTO -->
+<div class="modal-backdrop hidden" id="modal-gasto">
+  <div class="modal">
+    <div class="modal-head"><h2>Registrar Gasto</h2><button class="modal-close" onclick="closeModal('modal-gasto')">&times;</button></div>
+    <form id="form-gasto" class="modal-body">
+      <label>Descripcion *<input class="input" name="descripcion" required></label>
+      <div class="grid-2">
+        <label>Categoria
+          <select class="input" name="categoria">
+            <option>Alquiler aulas</option><option>Personal/asistentes</option>
+            <option>Insumos/refrigerios</option><option>Servicios</option>
+            <option>Transporte</option><option>Marketing</option>
+            <option>Materiales</option><option>Otros</option>
+          </select>
+        </label>
+        <label>Monto *<input class="input" name="monto" type="number" step="0.01" required></label>
+        <label>Fecha *<input class="input" name="fecha" type="date" required></label>
+        <label>Metodo pago
+          <select class="input" name="metodo_pago">
+            <option value="">--</option>
+            <option>Yape</option><option>Plin</option><option>Transferencia</option>
+            <option>Efectivo</option><option>Tarjeta</option>
+          </select>
+        </label>
+        <label>Proveedor<input class="input" name="proveedor"></label>
+        <label>Comprobante
+          <select class="input" name="comprobante">
+            <option>Sin comprobante</option><option>Boleta</option>
+            <option>Factura</option><option>Recibo</option>
+          </select>
+        </label>
+      </div>
+      <label>Notas<textarea class="input" name="notas" rows="2"></textarea></label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-gasto')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL INSUMO -->
+<div class="modal-backdrop hidden" id="modal-insumo">
+  <div class="modal">
+    <div class="modal-head"><h2>Nuevo Insumo</h2><button class="modal-close" onclick="closeModal('modal-insumo')">&times;</button></div>
+    <form id="form-insumo" class="modal-body">
+      <input type="hidden" name="id">
+      <label>Nombre *<input class="input" name="nombre" required></label>
+      <div class="grid-2">
+        <label>Unidad
+          <select class="input" name="unidad">
+            <option>g</option><option>kg</option><option>ml</option>
+            <option>l</option><option>uds</option><option>paquete</option>
+          </select>
+        </label>
+        <label>Stock actual<input class="input" name="stock_actual" type="number" step="0.01" value="0"></label>
+        <label>Stock minimo<input class="input" name="stock_minimo" type="number" step="0.01" value="0"></label>
+        <label>Consumo por clase<input class="input" name="consumo_clase" type="number" step="0.01" value="0"></label>
+        <label>Precio unitario (S/)<input class="input" name="precio_unitario" type="number" step="0.0001" value="0"></label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-insumo')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL EDITAR INSCRIPCION -->
+<div class="modal-backdrop hidden" id="modal-edit-insc">
+  <div class="modal">
+    <div class="modal-head"><h2>Editar Inscripcion</h2><button class="modal-close" onclick="closeModal('modal-edit-insc')">&times;</button></div>
+    <form id="form-edit-insc" class="modal-body">
+      <input type="hidden" name="id">
+      <div class="grid-2">
+        <label>Monto total<input class="input" name="monto_total" type="number" step="0.01"></label>
+        <label>Monto pagado<input class="input" name="monto_pagado" type="number" step="0.01"></label>
+        <label>Metodo de pago
+          <select class="input" name="metodo_pago">
+            <option value="">--</option>
+            <option>Yape</option><option>Plin</option><option>Transferencia</option>
+            <option>Efectivo</option><option>Tarjeta</option>
+          </select>
+        </label>
+        <label>Promocion<input class="input" name="promocion"></label>
+        <label>Tipo de descuento
+          <select class="input" name="tipo_descuento">
+            <option value="">--</option>
+            <option>2x1 referido</option>
+            <option>Descuento Instagram</option>
+            <option>Promo primer taller</option>
+            <option>Otro</option>
+          </select>
+        </label>
+        <label>Asistencia
+          <select class="input" name="asistencia">
+            <option>Pendiente</option><option>Asistio</option>
+            <option>No asistio</option><option>Reprogramo</option>
+          </select>
+        </label>
+      </div>
+      <label>Notas<textarea class="input" name="notas" rows="3"></textarea></label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-edit-insc')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
